@@ -1,0 +1,96 @@
+---
+title: "Creating a graph from dendogram data"
+output: html_notebook
+editor_options: 
+  chunk_output_type: inline
+---
+
+## Background
+
+This simple notebook is meant to produce a procedure that allows me to create a graph from dendogram data.
+
+I am basing this approach off https://www.gastonsanchez.com/visually-enforced/how-to/2014/06/29/Graph-from-dendrogram/
+
+## Packages
+
+
+
+```{r}
+library(ape) # philogenetic
+library(igraph)
+library(knitr)
+library(tidyverse) # loads ggplot2, dplyr,tidyr,readr,purr,tibble
+
+library(broom)  # because I find it useful
+
+options(scipen = 4)  # make output prefer not to use scientific notation
+```
+
+## Reproducing from webpage
+
+Mimicing the webpage, let's reproduce what they did
+
+### Get data and cluster
+
+```{r}
+# distance matrix 
+dist_usarrests = dist(USArrests)
+
+# hierarchical clustering analysis
+clus_usarrests = hclust(dist_usarrests, method = "ward.D")
+
+# plot dendrogram
+plot(clus_usarrests, hang = -1)
+```
+
+### Convert cluster to graph
+
+```{r}
+# convert 'hclust' to 'phylo' object
+phylo_tree = as.phylo(clus_usarrests)
+
+# get edges
+graph_edges = phylo_tree$edge
+```
+
+
+```{r}
+# get graph from edge list
+graph_net = graph.edgelist(graph_edges)
+
+# plot graph
+plot(graph_net)
+```
+
+```{r}
+# extract layout (x-y coords)
+graph_layout = layout.auto(graph_net)
+
+# number of observations
+nobs = nrow(USArrests)
+
+# start plot
+plot(graph_layout[,1], graph_layout[,2], type = "n", axes = FALSE,
+     xlab = "", ylab = "")
+# draw tree branches
+segments(
+  x0 = graph_layout[graph_edges[,1],1], 
+  y0 = graph_layout[graph_edges[,1],2],
+  x1 = graph_layout[graph_edges[,2],1],
+  y1 = graph_layout[graph_edges[,2],2],
+  col = "#dcdcdc55", lwd = 3.5
+)
+# add labels
+text(graph_layout[1:nobs,1], graph_layout[1:nobs,2],
+     phylo_tree$tip.label, cex = 1, xpd = TRUE, font = 1)
+```
+
+
+
+#### For later consideration
+
+```{r}
+library(ggraph)
+library(tidygraph)
+```
+
